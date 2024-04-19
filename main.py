@@ -4,7 +4,7 @@ from together import Together
 
 # Initialize Together client
 client = Together(api_key=os.environ.get("TOGETHER_API_KEY"))
-model_name = "mistralai/Mistral-7B-Instruct-v0.2"
+model_name = "meta-llama/Llama-3-8b-chat-hf"
 
 # Connect to the Jeopardy database
 conn = sqlite3.connect("dbljeopardy.sqlite")
