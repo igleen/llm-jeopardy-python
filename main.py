@@ -1,16 +1,20 @@
 import os
 import sqlite3
-from together import Together
+import requests
+import json
 
-# Initialize Together client
-client = Together(api_key=os.environ.get("TOGETHER_API_KEY"))
+# select API and model 
+#provider = "https://openrouter.ai/api/v1/chat/completions"
+#api_key = os.environ.get('OPENROUTER_API_KEY')
+#model_name = "meta-llama/llama-3-8b-instruct"
+
+provider = "https://api.together.xyz/v1/chat/completions"
+api_key = os.environ.get('TOGETHER_API_KEY')
 model_name = "meta-llama/Llama-3-8b-chat-hf"
 
-# Connect to the Jeopardy database
+# Read the Jeopardy database
 conn = sqlite3.connect("dbljeopardy.sqlite")
 cursor = conn.cursor()
-
-# Fetch unprocessed prompts for the model
 cursor.execute("""
     SELECT prompt.query, prompt.answer
     FROM prompt
@@ -24,32 +28,37 @@ cursor.execute("""
 prompts = cursor.fetchall()
 conn.close()
 
+# main loop
 correct_count = 0
-total_count = len(prompts)
-
+headers = {"Authorization": f"Bearer {api_key}"}
 for i, (query, answer) in enumerate(prompts):
-    response = client.chat.completions.create(
-        model=model_name,
-        messages=[{"role": "user", "content": query}]
-    )
+    payload = {
+        "model": model_name,
+        "messages": [{"role": "user", "content": query}],
+#        "temperature": 0.8, 
+#        "max_tokens": 100,
+    }
+    response = requests.post(provider, json=payload, headers=headers)
+    resp = json.loads(response.text)
 
-    model_answer = response.choices[0].message.content.strip()
     correct_answers = answer.split(";")
-    is_correct = any(
-        ca.lower() in model_answer.lower() for ca in correct_answers
-    )
-    if is_correct: correct_count += 1
+    if not 'choices' in resp: 
+        print(i, False, correct_answers, "")
+        continue
+    model_answer = resp['choices'][0]['message']['content'].strip()
+    is_correct = any(ca.lower() in model_answer.lower() for ca in correct_answers)
 
+    if is_correct: correct_count += 1
 #    if correct_count > 2: break # debug
 
     # V comment for quiet mode V
     print(i, is_correct, correct_answers, model_answer)
 
-score = (correct_count / total_count) * 100
+score = (correct_count / len(prompts)) * 100
 
 print('\n---\n')
 
 print(model_name)
 print(correct_count, 'T')
-print(total_count-correct_count, 'F')
+print(len(prompts)-correct_count, 'F')
 print(score, '%')
