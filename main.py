@@ -1,4 +1,4 @@
-import os
+import os, time
 import sqlite3
 import requests
 import json
@@ -35,11 +35,15 @@ for i, (query, answer) in enumerate(prompts):
     payload = {
         "model": model_name,
         "messages": [{"role": "user", "content": query}],
-#        "temperature": 0.8, 
+#        "temperature": 0.3, 
 #        "max_tokens": 100,
     }
     response = requests.post(provider, json=payload, headers=headers)
     resp = json.loads(response.text)
+    while 'error' in resp:
+        print(resp)
+        time.sleep(1)
+        resp = json.loads(requests.post(provider, json=payload, headers=headers).text)
 
     correct_answers = answer.split(";")
     if not 'choices' in resp: 
