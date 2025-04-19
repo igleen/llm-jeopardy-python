@@ -10,7 +10,7 @@ import json
 
 provider = "https://api.together.xyz/v1/chat/completions"
 api_key = os.environ.get('TOGETHER_API_KEY')
-model_name = "meta-llama/Llama-3-8b-chat-hf"
+model_name = "deepseek-ai/DeepSeek-V3"
 
 # Read the Jeopardy database
 conn = sqlite3.connect("dbljeopardy.sqlite")
